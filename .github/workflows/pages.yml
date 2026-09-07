@@ -1,7 +1,7 @@
 # Publica el lab en GitHub Pages: https://farena.github.io/fa-editor/
 #
-# Requiere, una sola vez, Settings > Pages > Build and deployment > Source:
-# "GitHub Actions". Sin eso el deploy falla aunque el workflow corra.
+# `enablement: true` en configure-pages deja Pages en modo "GitHub Actions" por
+# API, asi que no hace falta tocar Settings > Pages a mano.
 name: Deploy lab to Pages
 
 on:
@@ -28,12 +28,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: Install dependencies
@@ -43,13 +43,15 @@ jobs:
         run: npm run build:lab
 
       - name: Setup Pages
-        uses: actions/configure-pages@v4
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: './dist-lab'
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
