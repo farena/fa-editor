@@ -17,6 +17,8 @@
   --fa-ed-border: hsl(220, 6%, 81%);
   --fa-ed-bg: #fff;
   --fa-ed-toolbar-bg: hsl(0, 0%, 98%);
+  --fa-ed-scrollbar: hsl(220, 6%, 70%);
+  --fa-ed-scrollbar-size: 0.5em;
   --fa-ed-btn-hover-bg: hsl(0, 0%, 94.1%);
   --fa-ed-btn-on-bg: hsl(212, 100%, 97.1%);
   --fa-ed-btn-on-text: hsl(218.1, 100%, 58%);
@@ -43,14 +45,40 @@
 
 // --- Toolbar ---------------------------------------------------------------
 
+// The toolbar keeps to a single row: when it outgrows its container it scrolls
+// sideways instead of wrapping, so the editor's height never depends on how
+// narrow the field is. The panels are teleported to <body>, so nothing they
+// open gets clipped by this scroll container.
 .fa-editor__toolbar {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: var(--fa-ed-spacing-tiny, 0.18em);
   padding: var(--fa-ed-spacing-small, 0.3em);
   background: var(--fa-ed-toolbar-bg, hsl(0, 0%, 98%));
   border-bottom: 1px solid var(--fa-ed-border, hsl(220, 6%, 81%));
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--fa-ed-scrollbar, hsl(220, 6%, 70%)) transparent;
+
+  // Buttons keep their natural width: squeezing them is what the scroll is
+  // there to avoid.
+  > * {
+    flex: none;
+  }
+
+  &::-webkit-scrollbar {
+    height: var(--fa-ed-scrollbar-size, 0.5em);
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: var(--fa-ed-scrollbar, hsl(220, 6%, 70%));
+  }
 }
 
 .fa-editor__separator {

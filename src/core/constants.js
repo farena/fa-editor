@@ -96,8 +96,22 @@ export const TOOLBAR_ITEMS = [
     label: 'italic'
   },
   '|',
-  { name: 'fontFamily', type: 'dropdown', panel: 'fontFamily', label: 'fontFamily', wide: true },
-  { name: 'fontSize', type: 'dropdown', panel: 'fontSize', label: 'fontSize', wide: true },
+  {
+    name: 'fontFamily',
+    type: 'dropdown',
+    panel: 'fontFamily',
+    label: 'fontFamily',
+    icon: 'fontFamily',
+    wide: true
+  },
+  {
+    name: 'fontSize',
+    type: 'dropdown',
+    panel: 'fontSize',
+    label: 'fontSize',
+    icon: 'fontSize',
+    wide: true
+  },
   {
     name: 'fontColor',
     type: 'dropdown',

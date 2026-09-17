@@ -20,7 +20,7 @@
 
       <FaDropdown
         v-else
-        :title="t(item.label)"
+        :title="titleFor(item)"
         :icon="iconFor(item)"
         :label="labelFor(item)"
         :wide="item.wide"
@@ -117,21 +117,20 @@ export default {
       const current = ALIGNMENTS.find((a) => a.model === this.asValue(this.state.align))
       return (current || ALIGNMENTS[0]).icon
     },
+    // Only the heading dropdown shows its current value as a label; font family
+    // and font size are icon-only triggers and carry theirs in the tooltip.
     labelFor(item) {
-      if (item.panel === 'heading') {
-        const current = HEADINGS.find((h) => h.model === this.asValue(this.state.blockTag))
-        // With no recognized block, the paragraph option is the one shown.
-        return this.titleOf(current || HEADINGS[0])
-      }
-      if (item.panel === 'fontFamily') {
-        const current = FONT_FAMILIES.find((f) => f.model === this.asValue(this.state.fontFamily))
-        return current ? this.titleOf(current) : this.t('defaultOption')
-      }
-      if (item.panel === 'fontSize') {
-        const current = FONT_SIZES.find((s) => s.model === this.asValue(this.state.fontSize))
-        return current ? this.titleOf(current) : this.t('defaultOption')
-      }
-      return null
+      if (item.panel !== 'heading') return null
+      const current = HEADINGS.find((h) => h.model === this.asValue(this.state.blockTag))
+      // With no recognized block, the paragraph option is the one shown.
+      return this.titleOf(current || HEADINGS[0])
+    },
+    titleFor(item) {
+      const label = this.t(item.label)
+      const options = { fontFamily: FONT_FAMILIES, fontSize: FONT_SIZES }[item.panel]
+      if (!options) return label
+      const current = options.find((o) => o.model === this.asValue(this.state[item.panel]))
+      return `${label}: ${current ? this.titleOf(current) : this.t('defaultOption')}`
     },
     // Font family names are proper nouns and carry a literal title; everything
     // else names a key in the language file.

@@ -413,6 +413,8 @@ Defining them is what blends it into your theme.
 | `--fa-ed-radius`                                                   | `var(--radius)`                          | Editor and panel radius                   |
 | `--fa-ed-shadow`                                                   | `0 1px 2px 1px hsla(220, 6%, 10%, 0.15)` | Panel shadow                              |
 | `--fa-ed-spacing`, `--fa-ed-spacing-small`, `--fa-ed-spacing-tiny` | `0.6em`, `0.3em`, `0.18em`               | Toolbar spacing                           |
+| `--fa-ed-scrollbar`                                                | `hsl(220, 6%, 70%)`                      | Toolbar scrollbar thumb                   |
+| `--fa-ed-scrollbar-size`                                           | `0.5em`                                  | Toolbar scrollbar thickness               |
 
 Set them wherever it suits you. `:root` is the one place that reaches everything, including the
 panels and balloons, which are teleported to `<body>` and therefore inherit nothing from the
