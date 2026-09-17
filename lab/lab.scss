@@ -165,7 +165,8 @@ body {
   border-radius: var(--radius);
   font-size: 0.8em;
   white-space: pre-wrap;
-  word-break: break-all;
+  overflow-wrap: anywhere;
+  tab-size: 2;
 }
 
 .lab__preview {

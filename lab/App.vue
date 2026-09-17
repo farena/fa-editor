@@ -71,8 +71,11 @@
       <section class="lab__col">
         <div class="lab__card">
           <h2>Output HTML</h2>
-          <p class="lab__hint">Exactly what would be written to the database.</p>
-          <pre class="lab__output">{{ html || '(empty)' }}</pre>
+          <p class="lab__hint">
+            Exactly what would be written to the database. The line breaks and the indentation are
+            added here, for reading: they are not part of the value.
+          </p>
+          <pre class="lab__output">{{ prettyHtml(html) || '(empty)' }}</pre>
         </div>
 
         <div class="lab__card">
@@ -116,6 +119,7 @@
 import { FaEditor } from '../src/index'
 import { LANGS } from '../src/core/lang'
 import { CONTRACT_FIXTURES } from './fixtures'
+import { prettyHtml } from './pretty'
 
 // Corpus samples worth reaching in one click.
 const INTERESTING = [
@@ -126,6 +130,7 @@ const INTERESTING = [
   'multiple mentions',
   'link with text around it',
   'list with formatting',
+  'nested list, three levels',
   'list item with several paragraphs'
 ]
 
@@ -155,6 +160,8 @@ export default {
     this.runRoundTrip()
   },
   methods: {
+    prettyHtml,
+
     /**
      * Loads every sample into the probe editor and compares what comes back.
      * This is the check that matters: if it fails, opening a form and saving it
