@@ -72,6 +72,22 @@ export const COLOR_COLUMNS = 5
 
 export const TABLE_GRID_SIZE = 10
 
+// Indentation. A level is written as `margin-left:40px;` on the block, so the
+// step is part of the contract: changing it rewrites every indented document.
+// A value that is not a multiple of the step is quantized to the nearest level
+// on load, and level 0 is not serialized at all.
+export const INDENT_STEP = 40
+export const INDENT_UNIT = 'px'
+export const MAX_INDENT = 10
+
+// Blocks that can be indented. Cells are not among them: indenting inside a
+// table is done on the paragraph, not on the cell.
+export const INDENTABLE_TAGS = ['P', 'H2', 'H3', 'H4', 'LI']
+
+// Property order inside a block's style attribute. Like the span's, it defines
+// how the element serializes, so it is part of the contract.
+export const BLOCK_STYLE_ORDER = ['text-align', 'margin-left']
+
 // `toggle` marks the two-state buttons: those are the ones that get aria-pressed.
 export const TOOLBAR_ITEMS = [
   { name: 'undo', type: 'button', icon: 'undo', label: 'undo' },
@@ -94,6 +110,13 @@ export const TOOLBAR_ITEMS = [
     toggle: true,
     icon: 'italic',
     label: 'italic'
+  },
+  {
+    name: 'underline',
+    type: 'button',
+    toggle: true,
+    icon: 'underline',
+    label: 'underline'
   },
   '|',
   {
@@ -149,6 +172,18 @@ export const TOOLBAR_ITEMS = [
     toggle: true,
     icon: 'bulletedList',
     label: 'bulletedList'
+  },
+  {
+    name: 'indent',
+    type: 'button',
+    icon: 'indent',
+    label: 'indent'
+  },
+  {
+    name: 'outdent',
+    type: 'button',
+    icon: 'outdent',
+    label: 'outdent'
   }
 ]
 

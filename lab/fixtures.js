@@ -16,6 +16,11 @@ export const CONTRACT_FIXTURES = [
   { name: 'empty paragraph between content', html: '<p>One</p><p>&nbsp;</p><p>Two</p>' },
   { name: 'bold', html: '<p>Text <strong>in bold</strong> plain</p>' },
   { name: 'italic', html: '<p>Text <i>in italic</i> plain</p>' },
+  { name: 'underline', html: '<p>Text <u>underlined</u> plain</p>' },
+  {
+    name: 'underlined link',
+    html: '<p><a target="_blank" rel="noopener noreferrer" href="http://a.com"><u>Ticket</u></a> and <u>more</u></p>'
+  },
   { name: 'headings', html: '<h2>One</h2><h3>Two</h3><h4>Three</h4>' },
   { name: 'alignment', html: '<p style="text-align:center;">Centered</p>' },
   {
@@ -54,6 +59,51 @@ export const CONTRACT_FIXTURES = [
     name: 'canonical inline nesting order',
     html: '<p><strong>Both <i>at once</i></strong></p>',
     out: '<p><strong>Both </strong><i><strong>at once</strong></i></p>'
+  },
+  {
+    name: 'underline outside italic and bold',
+    html: '<p><u>All <i><strong>three</strong></i></u></p>'
+  },
+  {
+    name: 'underline inside bold is reordered',
+    html: '<p><strong><u>Both</u></strong></p>',
+    out: '<p><u><strong>Both</strong></u></p>'
+  },
+  { name: 'indented paragraph', html: '<p style="margin-left:40px;">One step in</p>' },
+  { name: 'deeper indentation', html: '<p style="margin-left:120px;">Three steps in</p>' },
+  {
+    name: 'indented heading',
+    html: '<h3 style="margin-left:40px;">Title</h3>'
+  },
+  {
+    name: 'indented list item',
+    html: '<ul><li>Flush</li><li style="margin-left:40px;">In</li></ul>'
+  },
+  {
+    // Alignment before indentation, whichever order they were applied in.
+    name: 'aligned and indented',
+    html: '<p style="text-align:center;margin-left:80px;">Both</p>'
+  },
+  {
+    name: 'indentation before alignment is reordered',
+    html: '<p style="margin-left:80px;text-align:center;">Both</p>',
+    out: '<p style="text-align:center;margin-left:80px;">Both</p>'
+  },
+  {
+    // The noise every CKEditor document carries: it stands for no indentation.
+    name: 'zero margin is dropped',
+    html: '<p style="margin-left:0px;">Flush</p>',
+    out: '<p>Flush</p>'
+  },
+  {
+    name: 'margin between levels is quantized',
+    html: '<p style="margin-left:37px;">Almost one step</p>',
+    out: '<p style="margin-left:40px;">Almost one step</p>'
+  },
+  {
+    name: 'margin in another unit is dropped',
+    html: '<p style="margin-left:2em;">Flush</p>',
+    out: '<p>Flush</p>'
   },
   {
     name: 'external link',
@@ -112,6 +162,7 @@ export const CONTRACT_FIXTURES = [
     name: 'combined document',
     html:
       '<h2>Title</h2>' +
+      '<p style="margin-left:40px;">Indented <u>underlined</u> aside.</p>' +
       '<p style="text-align:justify;">Text <strong>strong</strong> and <i>weak</i>.</p>' +
       '<ul><li>Item with a <span class="text-small">size</span></li></ul>' +
       '<figure class="table"><table><tbody><tr><td>X</td></tr></tbody></table></figure>' +

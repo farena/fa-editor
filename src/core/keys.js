@@ -1,7 +1,6 @@
 import { closestBlock, rootBlockOf, isTableFigure, isImageFigure, isElement } from './dom'
 import { isAtBlockStart, isAtBlockEnd, setRange, collapseTo, lastTextPosition } from './selection'
 import { normalizeInlines } from './normalize'
-import { getStyle, setStyle } from './css'
 import { unwrapItems } from './commands/list'
 import { FILLER_ATTR, BLOCK_TAGS } from './constants'
 
@@ -58,8 +57,10 @@ function splitBlock(root, block, range, tag) {
   const fragment = tail.extractContents()
 
   const created = document.createElement(tag)
-  const align = getStyle(block, 'text-align')
-  if (align) setStyle(created, 'text-align', align)
+  // The new block inherits the style of the one it came out of: alignment and
+  // indentation carry over to the next paragraph, which is what Enter means.
+  const style = block.getAttribute('style')
+  if (style) created.setAttribute('style', style)
   created.appendChild(fragment)
 
   block.parentNode.insertBefore(created, block.nextSibling)

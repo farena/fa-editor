@@ -19,6 +19,7 @@ const en = {
   heading: 'Heading',
   bold: 'Bold (Ctrl+B)',
   italic: 'Italic (Ctrl+I)',
+  underline: 'Underline (Ctrl+U)',
   fontFamily: 'Font family',
   fontSize: 'Font size',
   fontColor: 'Font color',
@@ -26,6 +27,8 @@ const en = {
   link: 'Link (Ctrl+K)',
   numberedList: 'Numbered list',
   bulletedList: 'Bulleted list',
+  indent: 'Increase indent',
+  outdent: 'Decrease indent',
 
   // Shared
   defaultOption: 'Default',
@@ -105,6 +108,7 @@ const es = {
   heading: 'Encabezado',
   bold: 'Negrita (Ctrl+B)',
   italic: 'Cursiva (Ctrl+I)',
+  underline: 'Subrayado (Ctrl+U)',
   fontFamily: 'Fuente',
   fontSize: 'Tamaño de fuente',
   fontColor: 'Color de fuente',
@@ -112,6 +116,8 @@ const es = {
   link: 'Enlace (Ctrl+K)',
   numberedList: 'Lista numerada',
   bulletedList: 'Lista con viñetas',
+  indent: 'Aumentar sangría',
+  outdent: 'Reducir sangría',
 
   defaultOption: 'Predeterminado',
   accept: 'Aceptar',
@@ -184,6 +190,7 @@ const pt = {
   heading: 'Título',
   bold: 'Negrito (Ctrl+B)',
   italic: 'Itálico (Ctrl+I)',
+  underline: 'Sublinhado (Ctrl+U)',
   fontFamily: 'Fonte',
   fontSize: 'Tamanho da fonte',
   fontColor: 'Cor da fonte',
@@ -191,6 +198,8 @@ const pt = {
   link: 'Link (Ctrl+K)',
   numberedList: 'Lista numerada',
   bulletedList: 'Lista com marcadores',
+  indent: 'Aumentar recuo',
+  outdent: 'Diminuir recuo',
 
   defaultOption: 'Padrão',
   accept: 'Aceitar',

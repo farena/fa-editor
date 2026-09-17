@@ -152,6 +152,7 @@ const tagSpec = (tag) => ({
 
 export const boldSpec = tagSpec('strong')
 export const italicSpec = tagSpec('i')
+export const underlineSpec = tagSpec('u')
 
 export const fontFamilySpec = {
   matches: (el) => el.tagName === 'SPAN' && !!getStyle(el, 'font-family'),

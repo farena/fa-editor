@@ -66,7 +66,14 @@ import FaIcon from './FaIcon.vue'
 import FaDropdown from './FaDropdown.vue'
 import FaColorGrid from './FaColorGrid.vue'
 import FaTableGrid from './FaTableGrid.vue'
-import { TOOLBAR_ITEMS, HEADINGS, ALIGNMENTS, FONT_FAMILIES, FONT_SIZES } from './core/constants'
+import {
+  TOOLBAR_ITEMS,
+  HEADINGS,
+  ALIGNMENTS,
+  FONT_FAMILIES,
+  FONT_SIZES,
+  MAX_INDENT
+} from './core/constants'
 import { defaultTranslator } from './core/lang'
 
 export default {
@@ -99,6 +106,7 @@ export default {
       const map = {
         bold: this.state.bold,
         italic: this.state.italic,
+        underline: this.state.underline,
         link: !!this.state.link,
         bulletedList: this.state.list === 'ul',
         numberedList: this.state.list === 'ol'
@@ -109,6 +117,14 @@ export default {
       if (this.disabled) return true
       if (name === 'undo') return !this.canUndo
       if (name === 'redo') return !this.canRedo
+      // A mixed selection always has somewhere to go: some block in it is off
+      // the limit the button would hit.
+      if (name === 'indent' || name === 'outdent') {
+        const level = this.state.indent
+        if (level === null) return true
+        if (level === 'mixed') return false
+        return name === 'indent' ? level >= MAX_INDENT : level <= 0
+      }
       return false
     },
     // The alignment button shows the icon of the current alignment.

@@ -2,7 +2,6 @@ import { sanitizeHtml } from './sanitize'
 import { closestBlock, rootBlockOf, isElement } from './dom'
 import { setRange } from './selection'
 import { normalizeInlines, normalizeRoot, normalizeWhitespace, guardStructure } from './normalize'
-import { getStyle, setStyle } from './css'
 
 const ROOT_LEVEL = 'P, H2, H3, H4, UL, OL, FIGURE'
 
@@ -125,8 +124,10 @@ function insertBlocks(root, range, rootBlock, blocks) {
       normalizeInlines(caretHost)
     } else {
       const trailing = document.createElement('p')
-      const align = getStyle(rootBlock, 'text-align')
-      if (align) setStyle(trailing, 'text-align', align)
+      // What was after the caret keeps the block's style: alignment and
+      // indentation belong to the text, not to the paste.
+      const style = rootBlock.getAttribute('style')
+      if (style) trailing.setAttribute('style', style)
       trailing.appendChild(remainder)
       anchor.parentNode.insertBefore(trailing, anchor.nextSibling)
     }

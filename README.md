@@ -14,7 +14,7 @@ silently rewrites stored content.
   `hsl()`, and it cannot see mutations made through the Range API.
 - **WYSIWYG for real.** The editable area applies no content styles of its own, so what you see
   while typing is what the page renders afterwards with `v-html`.
-- **~34 kB gzipped**, CSS and icons included.
+- **~36 kB gzipped**, CSS and icons included.
 
 **[Try it in the lab →](https://farena.github.io/fa-editor/)** — every feature of the contract on
 one page, with the serialized HTML and a `v-html` preview side by side, so you can check that what
@@ -324,19 +324,20 @@ registerLang('es', {
 
 ## Keyboard
 
-| Keys                                | Action                                                                      |
-| ----------------------------------- | --------------------------------------------------------------------------- |
-| `Ctrl+B` / `Ctrl+I`                 | Bold / italic                                                               |
-| `Ctrl+K`                            | Link                                                                        |
-| `Ctrl+Z` / `Ctrl+Y`, `Ctrl+Shift+Z` | Undo / redo                                                                 |
-| `Enter`                             | New block, keeping tag and alignment. At the end of a heading, a paragraph. |
-| `Shift+Enter`, `Ctrl+Enter`         | Soft line break (`<br>`)                                                    |
-| `Enter` on an empty list item       | Leaves the list                                                             |
-| `Tab` / `Shift+Tab` inside a table  | Next / previous cell; on the last cell, adds a row                          |
-| `Backspace` at the start of a block | Merges into the previous block                                              |
+| Keys                                | Action                                                                                   |
+| ----------------------------------- | ---------------------------------------------------------------------------------------- |
+| `Ctrl+B` / `Ctrl+I` / `Ctrl+U`      | Bold / italic / underline                                                                |
+| `Ctrl+K`                            | Link                                                                                     |
+| `Ctrl+Z` / `Ctrl+Y`, `Ctrl+Shift+Z` | Undo / redo                                                                              |
+| `Enter`                             | New block, keeping tag, alignment and indentation. At the end of a heading, a paragraph. |
+| `Shift+Enter`, `Ctrl+Enter`         | Soft line break (`<br>`)                                                                 |
+| `Enter` on an empty list item       | Leaves the list                                                                          |
+| `Tab` / `Shift+Tab` inside a table  | Next / previous cell; on the last cell, adds a row                                       |
+| `Backspace` at the start of a block | Merges into the previous block                                                           |
 
-Formatting shortcuts the browser provides on its own — `Ctrl+U` being the usual one — are
-blocked, because they would insert tags that are not in the contract.
+Formatting shortcuts the browser provides on its own that the editor does not implement —
+`Ctrl+Shift+X` for strikethrough being the usual one — are blocked, because they would insert
+tags that are not in the contract.
 
 ## The HTML contract
 
@@ -346,8 +347,10 @@ follows this table:
 | Feature        | Output                                                                                                |
 | -------------- | ----------------------------------------------------------------------------------------------------- |
 | bold / italic  | `<strong>` / `<i>`                                                                                    |
+| underline      | `<u>`                                                                                                 |
 | headings       | `<h2>` `<h3>` `<h4>` — there is no `h1`                                                               |
 | alignment      | `style="text-align:center;"` on the block                                                             |
+| indentation    | `style="margin-left:40px;"` on the block — 40 px per level, up to 10                                  |
 | font family    | `<span style="font-family:'Courier New', Courier, monospace;">` — 8 families plus default             |
 | font size      | **classes**: `text-tiny` `text-small` `text-big` `text-huge`                                          |
 | font color     | `<span style="color:hsl(0,75%,60%);">` — a palette of 15, plus any color already in the data          |
@@ -360,16 +363,20 @@ follows this table:
 
 Normalization rules that are part of the contract just as much as the tags:
 
-- Inline formats always serialize in the same order — `a` > `span` > `i` > `strong` — no matter
-  which order they were applied in, and inside the span `color` comes before `font-family`.
+- Inline formats always serialize in the same order — `a` > `span` > `u` > `i` > `strong` — no
+  matter which order they were applied in, and inside the span `color` comes before `font-family`.
 - All font attributes live in one `<span>`, never in nested ones.
 - Runs of spaces collapse; a space that would sit against a `<br>` becomes `&nbsp;`, and one at
   the end of a block is dropped.
 - Inline `font-size` and `background-color` are discarded. `font-family` survives only on an
   exact match with one of the configured families.
 - Color values are compacted: `hsl(0, 75%, 60%)` is stored as `hsl(0,75%,60%)`.
-- Only `text-align` survives in a block's `style`. Anything else — a stray `margin-left` from
-  old content, say — is dropped.
+- Only `text-align` and `margin-left` survive in a block's `style`, in that order. Anything else
+  — a stray `padding` from old content, say — is dropped.
+- `margin-left` is quantized to a level: a value between two steps is rounded to the nearest one,
+  and anything that is not a positive length in `px` — `margin-left:0px` above all, which is what
+  other editors write for "not indented" — is dropped altogether. Indentation lives on the
+  paragraph, the heading or the list item; lists are never nested to express it.
 
 The [lab](https://farena.github.io/fa-editor/) runs a round-trip over this whole table on load,
 so you can see the contract holding rather than take it on trust — and paste your own stored
@@ -481,7 +488,7 @@ Consequences worth knowing:
 - **They follow the text.** `fill: currentColor` and `height: 1em` mean an icon takes the color
   and the size of the button around it, exactly as a font glyph did. `--fa-ed-font-size` still
   scales the whole toolbar, icons included.
-- **They cost about 3 kB gzipped**, all 22 of them, and travel inside the JS bundle. No extra
+- **They cost about 3 kB gzipped**, all 27 of them, and travel inside the JS bundle. No extra
   request, and nothing to break when a CDN is down or a Content-Security-Policy forbids it.
 - **They are decorative.** Every button already carries `title` and `aria-label`, so the `<svg>`
   is `aria-hidden`.

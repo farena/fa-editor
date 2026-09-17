@@ -7,14 +7,15 @@ import {
   unwrap,
   replaceTag
 } from './dom'
-import { parseStyle, serializeStyle } from './css'
-import { BLOCK_TAGS } from './constants'
+import { parseStyle, serializeStyle, getStyle } from './css'
+import { BLOCK_TAGS, BLOCK_STYLE_ORDER, INDENTABLE_TAGS } from './constants'
+import { readIndent, indentValue } from './indent'
 
 // Tags allowed as direct children of the editable root.
 const ROOT_ALLOWED = ['P', 'H2', 'H3', 'H4', 'UL', 'OL']
 
 // Inline tags allowed inside a block.
-const INLINE_ALLOWED = ['STRONG', 'I', 'A', 'SPAN', 'BR']
+const INLINE_ALLOWED = ['STRONG', 'I', 'U', 'A', 'SPAN', 'BR']
 
 const isAllowedRootChild = (node) =>
   isElement(node) &&
@@ -108,6 +109,7 @@ export function normalizeRoot(root) {
     normalizeInlines(block)
   }
 
+  normalizeBlockStyles(root)
   fillEmptyBlocks(root)
   ensureNotEmpty(root)
   return root
@@ -232,7 +234,7 @@ export function normalizeInlines(el) {
  * text with the same formatting would be stored two different ways depending on
  * how the user built it.
  */
-const NESTING_ORDER = { A: 1, SPAN: 2, I: 3, STRONG: 4 }
+const NESTING_ORDER = { A: 1, SPAN: 2, U: 3, I: 4, STRONG: 5 }
 
 // Property order inside the font span's style attribute.
 const STYLE_ORDER = ['color', 'font-family']
@@ -288,7 +290,7 @@ function reorderNesting(root) {
   let guard = 0
   while (swapped && guard++ < 20) {
     swapped = false
-    for (const child of Array.from(root.querySelectorAll('a, span, i, strong'))) {
+    for (const child of Array.from(root.querySelectorAll('a, span, u, i, strong'))) {
       const parent = child.parentNode
       if (!parent || !isElement(parent) || parent === root) continue
       const parentRank = rankOf(parent)
@@ -356,6 +358,30 @@ function orderSpanAttributes(span) {
   if (compacted.length) span.setAttribute('style', serializeStyle(compacted))
 }
 
+/**
+ * Canonical form of a block's style attribute: the declarations the contract
+ * allows, in the contract's order, with the indentation quantized to a level.
+ * The commands write one property at a time, so without this the same block
+ * serializes differently depending on whether it was aligned or indented first.
+ */
+export function normalizeBlockStyles(root) {
+  for (const block of Array.from(root.querySelectorAll('p, h2, h3, h4, li'))) {
+    if (!block.getAttribute('style')) continue
+
+    const decls = []
+    const align = getStyle(block, 'text-align')
+    const indent = INDENTABLE_TAGS.includes(block.tagName) ? indentValue(readIndent(block)) : null
+    if (align) decls.push({ prop: 'text-align', value: align.trim().toLowerCase() })
+    if (indent) decls.push({ prop: 'margin-left', value: indent })
+    decls.sort((a, b) => BLOCK_STYLE_ORDER.indexOf(a.prop) - BLOCK_STYLE_ORDER.indexOf(b.prop))
+
+    const style = serializeStyle(decls)
+    if (style) block.setAttribute('style', style)
+    else block.removeAttribute('style')
+  }
+  return root
+}
+
 const LEAF_BLOCKS = 'p, h2, h3, h4, li, td, th'
 const COLLAPSIBLE = /[ \t\n\r\f]+/g
 
@@ -414,7 +440,7 @@ function collapseInBlock(block) {
  * this, opening and saving a document with multi-paragraph items merges them into
  * one and the break is lost.
  */
-const INLINE_WRAPPERS = 'strong, i, a, span'
+const INLINE_WRAPPERS = 'strong, i, u, a, span'
 
 /**
  * Blocks inside an inline wrapper.

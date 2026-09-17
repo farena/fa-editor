@@ -91,11 +91,12 @@ import {
   removeInline,
   boldSpec,
   italicSpec,
+  underlineSpec,
   fontFamilySpec,
   fontSizeSpec,
   fontColorSpec
 } from './core/commands/inline'
-import { setBlockTag, setAlignment } from './core/commands/block'
+import { setBlockTag, setAlignment, changeIndent } from './core/commands/block'
 import { toggleList } from './core/commands/list'
 import { applyLink, updateLink, unlink, findLink, autoLink } from './core/commands/link'
 import * as table from './core/commands/table'
@@ -282,8 +283,9 @@ export default {
 
       const type = event.inputType
 
-      // Browsers ship their own formatting shortcuts (Ctrl+U being the usual
-      // one) that would produce <u> or <s>, tags the contract does not include.
+      // Browsers ship their own formatting shortcuts that would produce tags
+      // the contract does not include, <s> among them. The ones the editor does
+      // implement are caught on keydown, before they ever reach this point.
       if (type.startsWith('format')) {
         event.preventDefault()
         return
@@ -362,6 +364,10 @@ export default {
       if (meta && event.key.toLowerCase() === 'i') {
         event.preventDefault()
         return this.onCommand('italic')
+      }
+      if (meta && event.key.toLowerCase() === 'u') {
+        event.preventDefault()
+        return this.onCommand('underline')
       }
       if (meta && event.key.toLowerCase() === 'k') {
         event.preventDefault()
@@ -566,11 +572,14 @@ export default {
       const handlers = {
         bold: () => this.toggleInline(range, boldSpec, true, this.state.bold),
         italic: () => this.toggleInline(range, italicSpec, true, this.state.italic),
+        underline: () => this.toggleInline(range, underlineSpec, true, this.state.underline),
         fontFamily: () => this.setInline(range, fontFamilySpec, value),
         fontSize: () => this.setInline(range, fontSizeSpec, value),
         fontColor: () => this.setInline(range, fontColorSpec, value),
         heading: () => setBlockTag(root, range, value),
         alignment: () => setAlignment(root, range, value),
+        indent: () => changeIndent(root, range, 1),
+        outdent: () => changeIndent(root, range, -1),
         bulletedList: () => toggleList(root, range, 'ul'),
         numberedList: () => toggleList(root, range, 'ol'),
         insertTable: () => table.insertTable(root, range, value.rows, value.cols),

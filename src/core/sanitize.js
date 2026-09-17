@@ -1,6 +1,7 @@
-import { FONT_FAMILIES, FONT_SIZES, EXTERNAL_LINK_RE } from './constants'
+import { FONT_FAMILIES, FONT_SIZES, EXTERNAL_LINK_RE, INDENTABLE_TAGS } from './constants'
 import { isElement, isText, unwrap, replaceTag } from './dom'
 import { keepStyles, parseStyle, setStyle, getStyle, serializeStyle } from './css'
+import { readIndent, writeIndent } from './indent'
 import { normalizeBlockContainers, distributeInlinesOverBlocks } from './normalize'
 
 // Elements dropped together with everything inside them.
@@ -39,7 +40,6 @@ const TAG_MAP = {
 
 // Tags that vanish leaving their content behind: not part of the contract.
 const UNWRAP = [
-  'U',
   'S',
   'STRIKE',
   'DEL',
@@ -88,6 +88,7 @@ const STRUCTURAL = [
   'H4',
   'STRONG',
   'I',
+  'U',
   'A',
   'SPAN'
 ]
@@ -163,10 +164,12 @@ function cleanWordArtifacts(root) {
   }
 }
 
-// Inline font-weight / font-style are translated into the contract's tags.
+// Inline font-weight / font-style / text-decoration are translated into the
+// contract's tags.
 function liftImplicitFormats(el) {
   const weight = getStyle(el, 'font-weight')
   const style = getStyle(el, 'font-style')
+  const decoration = getStyle(el, 'text-decoration') || getStyle(el, 'text-decoration-line')
   let target = el
 
   if (weight && /^(bold|[6-9]00)$/i.test(weight.trim())) {
@@ -179,6 +182,12 @@ function liftImplicitFormats(el) {
     const italic = document.createElement('i')
     target.parentNode.insertBefore(italic, target)
     italic.appendChild(target)
+    target = italic
+  }
+  if (decoration && /underline/i.test(decoration)) {
+    const underline = document.createElement('u')
+    target.parentNode.insertBefore(underline, target)
+    underline.appendChild(target)
   }
 }
 
@@ -294,18 +303,22 @@ function cleanAttributes(el, strict) {
     for (const attr of Array.from(el.attributes)) {
       if (attr.name !== 'style') el.removeAttribute(attr.name)
     }
-    // Only text-align survives, in permissive mode too: everything else is
-    // discarded (old content carries things like margin-left) so that opening
-    // and saving produces exactly the same HTML it started with.
+    // Only text-align and the indentation survive, in permissive mode too:
+    // everything else is discarded (old content carries stray margins and
+    // paddings) so that opening and saving produces the same HTML it started
+    // with. They are rewritten in the contract's order, which is the order this
+    // reads them in.
     const align = getStyle(el, 'text-align')
+    const indent = INDENTABLE_TAGS.includes(tag) ? readIndent(el) : 0
     keepStyles(el, [])
     if (align && ALIGN_VALUES.includes(align.trim().toLowerCase())) {
       setStyle(el, 'text-align', align.trim().toLowerCase())
     }
+    if (indent) writeIndent(el, indent)
     return
   }
 
-  if (tag === 'STRONG' || tag === 'I' || tag === 'BR') {
+  if (tag === 'STRONG' || tag === 'I' || tag === 'U' || tag === 'BR') {
     for (const attr of Array.from(el.attributes)) el.removeAttribute(attr.name)
   }
 }
