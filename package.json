@@ -1,6 +1,6 @@
 {
   "name": "@farena/fa-editor",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Zero-dependency rich-text editor for Vue 3, with a strict and stable HTML contract",
   "keywords": [
     "vue",
