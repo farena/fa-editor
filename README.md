@@ -331,7 +331,7 @@ registerLang('es', {
 | `Ctrl+Z` / `Ctrl+Y`, `Ctrl+Shift+Z` | Undo / redo                                                                              |
 | `Enter`                             | New block, keeping tag, alignment and indentation. At the end of a heading, a paragraph. |
 | `Shift+Enter`, `Ctrl+Enter`         | Soft line break (`<br>`)                                                                 |
-| `Enter` on an empty list item       | Leaves the list                                                                          |
+| `Enter` on an empty list item       | One nesting level out, and from the top level, out of the list                            |
 | `Tab` / `Shift+Tab` inside a table  | Next / previous cell; on the last cell, adds a row                                       |
 | `Backspace` at the start of a block | Merges into the previous block                                                           |
 
@@ -350,12 +350,13 @@ follows this table:
 | underline      | `<u>`                                                                                                 |
 | headings       | `<h2>` `<h3>` `<h4>` — there is no `h1`                                                               |
 | alignment      | `style="text-align:center;"` on the block                                                             |
-| indentation    | `style="margin-left:40px;"` on the block — 40 px per level, up to 10                                  |
+| indentation    | `style="margin-left:40px;"` on the block — 40 px per level, up to 10; a list item nests instead        |
 | font family    | `<span style="font-family:'Courier New', Courier, monospace;">` — 8 families plus default             |
 | font size      | **classes**: `text-tiny` `text-small` `text-big` `text-huge`                                          |
 | font color     | `<span style="color:hsl(0,75%,60%);">` — a palette of 15, plus any color already in the data          |
 | link           | `<a target="_blank" rel="noopener noreferrer" href="...">`, in that order; default protocol `http://` |
 | lists          | `<ul><li>` / `<ol><li>`; an item with more than one block keeps them (`<li><p>a</p><p>b</p></li>`)    |
+| nested lists   | the sublist lives inside the item above it: `<ul><li>One<ul><li>Nested</li></ul></li></ul>`, up to 10  |
 | table          | `<figure class="table"><table><tbody><tr><td>`; the header row goes in `<thead>` with `<th>`          |
 | mention        | `<span class="mention" data-mention="#foo">#foo</span>`                                               |
 | soft break     | `<br>`                                                                                                |
@@ -368,6 +369,9 @@ Normalization rules that are part of the contract just as much as the tags:
 - All font attributes live in one `<span>`, never in nested ones.
 - Runs of spaces collapse; a space that would sit against a `<br>` becomes `&nbsp;`, and one at
   the end of a block is dropped.
+- An empty block is closed with `&nbsp;` — `<p>&nbsp;</p>`, and `<p>text<br>&nbsp;</p>` for one
+  ending in a break — so the empty line survives outside the editor. An empty **list item** is
+  the exception: it is stored as `<li></li>`, because its marker already holds the line.
 - Inline `font-size` and `background-color` are discarded. `font-family` survives only on an
   exact match with one of the configured families.
 - Color values are compacted: `hsl(0, 75%, 60%)` is stored as `hsl(0,75%,60%)`.
@@ -375,8 +379,12 @@ Normalization rules that are part of the contract just as much as the tags:
   — a stray `padding` from old content, say — is dropped.
 - `margin-left` is quantized to a level: a value between two steps is rounded to the nearest one,
   and anything that is not a positive length in `px` — `margin-left:0px` above all, which is what
-  other editors write for "not indented" — is dropped altogether. Indentation lives on the
-  paragraph, the heading or the list item; lists are never nested to express it.
+  other editors write for "not indented" — is dropped altogether.
+- Indenting a paragraph or a heading writes that margin. Indenting a **list item** nests it
+  instead: the item moves into a sublist of its own type inside the item above it, which is the
+  only structure the indent button produces. A `margin-left` on an `<li>` is still read and kept,
+  so documents written by an earlier version survive untouched — outdenting the item is what
+  clears it. The first item of a list has no item above it to nest into, so it cannot be indented.
 
 The [lab](https://farena.github.io/fa-editor/) runs a round-trip over this whole table on load,
 so you can see the contract holding rather than take it on trust — and paste your own stored

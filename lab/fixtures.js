@@ -119,6 +119,28 @@ export const CONTRACT_FIXTURES = [
     name: 'list with formatting',
     html: '<ul><li><strong>One</strong></li><li>Two <i>in italic</i></li></ul>'
   },
+  { name: 'empty list item', html: '<ul><li>One</li><li></li><li>Two</li></ul>' },
+  {
+    name: 'empty list item written with a hard space',
+    html: '<ul><li>One</li><li>&nbsp;</li></ul>',
+    out: '<ul><li>One</li><li></li></ul>'
+  },
+  {
+    name: 'nested list',
+    html: '<ul><li>One<ul><li>Nested</li></ul></li><li>Two</li></ul>'
+  },
+  {
+    name: 'nested list, three levels',
+    html: '<ul><li>One<ul><li>Two<ul><li>Three</li></ul></li></ul></li></ul>'
+  },
+  {
+    name: 'numbered list nested in a bulleted one',
+    html: '<ul><li>One<ol><li>First</li><li>Second</li></ol></li></ul>'
+  },
+  {
+    name: 'item with content, a sublist and siblings',
+    html: '<ol><li>One<ol><li>Inner</li></ol></li><li>Two</li></ol>'
+  },
   {
     name: 'simple table',
     html: '<figure class="table"><table><tbody><tr><td>A</td><td>B</td></tr><tr><td>C</td><td>D</td></tr></tbody></table></figure>'

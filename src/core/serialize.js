@@ -46,6 +46,10 @@ function stripEditingArtifacts(root) {
 // An empty block is exported as <p>&nbsp;</p> and a block ending in a break as
 // <p>text<br>&nbsp;</p>. While editing we add an extra <br> as filler so the
 // line keeps its height, and that one has to be dropped here.
+//
+// A list item is the exception: it comes out as <li></li>. Its marker already
+// gives the line away, so the &nbsp; would only be a character nobody typed
+// sitting in the stored document.
 function closeBlocks(root) {
   for (const block of Array.from(root.querySelectorAll(BLOCKS))) {
     if (block.querySelector('img, table')) continue
@@ -68,7 +72,7 @@ function closeBlocks(root) {
       isElement(block.firstChild) &&
       block.firstChild.tagName === 'BR'
     if (onlyBreak || (isBlank(block) && !block.querySelector('br'))) {
-      block.innerHTML = '&nbsp;'
+      block.innerHTML = block.tagName === 'LI' ? '' : '&nbsp;'
       continue
     }
 

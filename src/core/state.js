@@ -7,7 +7,7 @@ import {
   fontSizeSpec,
   fontColorSpec
 } from './commands/inline'
-import { queryBlockTag, queryAlignment, queryIndent } from './commands/block'
+import { queryBlockTag, queryAlignment, queryIndent, queryIndentLimits } from './commands/block'
 import { queryList } from './commands/list'
 import { findLink } from './commands/link'
 import { cellOf, tableOf } from './commands/table'
@@ -22,6 +22,8 @@ export const EMPTY_STATE = {
   blockTag: null,
   align: null,
   indent: null,
+  canIndent: false,
+  canOutdent: false,
   list: null,
   link: null,
   cell: null,
@@ -36,6 +38,7 @@ export function computeState(root, range) {
   if (!range) return { ...EMPTY_STATE }
 
   const node = range.startContainer
+  const limits = queryIndentLimits(root, range)
   return {
     bold: queryInline(root, range, boldSpec) === true,
     italic: queryInline(root, range, italicSpec) === true,
@@ -46,6 +49,8 @@ export function computeState(root, range) {
     blockTag: queryBlockTag(root, range),
     align: queryAlignment(root, range),
     indent: queryIndent(root, range),
+    canIndent: limits.canIndent,
+    canOutdent: limits.canOutdent,
     list: queryList(root, range),
     link: findLink(root, node),
     cell: cellOf(root, node),

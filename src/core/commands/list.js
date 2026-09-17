@@ -1,8 +1,99 @@
-import { replaceTag, isElement, closestTag } from '../dom'
+import { replaceTag, isElement, closestTag, removeStyleProp } from '../dom'
 import { rootBlocksInRange, blocksInRange, snapshotSelection, restoreSelection } from '../selection'
 import { normalizeInlines } from '../normalize'
+import { MAX_INDENT } from '../constants'
 
 const LIST_TAGS = ['UL', 'OL']
+
+const isList = (node) => isElement(node) && LIST_TAGS.includes(node.tagName)
+const isItem = (node) => isElement(node) && node.tagName === 'LI'
+
+// Nesting depth of an item: 0 at the top level of its list.
+export function itemDepth(root, li) {
+  let depth = 0
+  let node = li.parentNode
+  while (node && node !== root) {
+    if (isItem(node)) depth++
+    node = node.parentNode
+  }
+  return depth
+}
+
+// An item nests into the one above it, so the first item of a list has nowhere
+// to go: a list whose first child is another list is not valid HTML.
+export function canIndentItem(root, li) {
+  return isItem(li.previousElementSibling) && itemDepth(root, li) < MAX_INDENT
+}
+
+export const canOutdentItem = (root, li) => itemDepth(root, li) > 0
+
+// Items whose own ancestor is in the selection too: nesting those would move
+// them twice.
+const outermost = (items) =>
+  items.filter((li) => !items.some((other) => other !== li && other.contains(li)))
+
+/**
+ * Indentation inside a list is nesting: the item moves into a list of its own
+ * type inside the item above it, which is the structure the contract stores.
+ *
+ * Items are walked in document order, so a run of selected siblings all land in
+ * the same sublist: once the first one has moved, the next one's previous
+ * sibling is the item that now holds it.
+ */
+export function indentItems(root, items) {
+  let changed = false
+  for (const li of outermost(items)) {
+    if (!canIndentItem(root, li)) continue
+    const list = li.parentNode
+    const previous = li.previousElementSibling
+
+    // A sublist already hanging from the item above is the one to join.
+    const last = previous.lastElementChild
+    if (isList(last) && last.tagName === list.tagName) last.appendChild(li)
+    else {
+      const sublist = document.createElement(list.tagName.toLowerCase())
+      previous.appendChild(sublist)
+      sublist.appendChild(li)
+    }
+
+    // Nesting is what carries the level now; a margin from older content would
+    // add a second one on top of it.
+    removeStyleProp(li, 'margin-left')
+    changed = true
+  }
+  return changed
+}
+
+/**
+ * One level out. Items below the one moving stay below it: they become its own
+ * sublist, so nothing jumps a level.
+ */
+export function outdentItems(root, items) {
+  let changed = false
+  for (const li of outermost(items)) {
+    const list = li.parentNode
+    const parentItem = list && list.parentNode
+    if (!isItem(parentItem)) continue
+
+    const following = []
+    let next = li.nextElementSibling
+    while (next) {
+      following.push(next)
+      next = next.nextElementSibling
+    }
+
+    parentItem.parentNode.insertBefore(li, parentItem.nextSibling)
+
+    if (following.length) {
+      const sublist = document.createElement(list.tagName.toLowerCase())
+      following.forEach((item) => sublist.appendChild(item))
+      li.appendChild(sublist)
+    }
+    if (!list.children.length) list.parentNode.removeChild(list)
+    changed = true
+  }
+  return changed
+}
 
 const listItemsOf = (root, range) => blocksInRange(root, range).filter((el) => el.tagName === 'LI')
 
@@ -65,16 +156,35 @@ export function unwrapItems(root, items) {
   const created = []
   for (const li of items) {
     const list = li.parentNode
-    if (!list || !LIST_TAGS.includes(list.tagName)) continue
+    if (!isList(list)) continue
+
+    // A nested item comes out to the top level first: a paragraph cannot be
+    // left sitting inside the item that held the sublist.
+    if (isItem(list.parentNode)) {
+      outdentItems(root, [li])
+      created.push(...unwrapItems(root, [li]))
+      continue
+    }
 
     const p = document.createElement('p')
     const style = li.getAttribute('style')
     if (style) p.setAttribute('style', style)
-    while (li.firstChild) p.appendChild(li.firstChild)
+
+    // Whatever was nested under the item outlives it as a list of its own,
+    // right after the paragraph.
+    const sublists = []
+    while (li.firstChild) {
+      const child = li.firstChild
+      li.removeChild(child)
+      if (isList(child)) sublists.push(child)
+      else p.appendChild(child)
+    }
     if (!p.firstChild) p.appendChild(document.createElement('br'))
 
     const after = splitListAfter(list, li)
-    list.parentNode.insertBefore(p, after || list.nextSibling)
+    const anchor = after || list.nextSibling
+    list.parentNode.insertBefore(p, anchor)
+    for (const sublist of sublists) list.parentNode.insertBefore(sublist, anchor)
     list.removeChild(li)
 
     if (!list.children.length) list.parentNode.removeChild(list)
@@ -117,4 +227,4 @@ function mergeSiblingLists(root, list) {
   return list
 }
 
-export { LIST_TAGS, mergeSiblingLists }
+export { LIST_TAGS, mergeSiblingLists, isList, isItem }

@@ -1,5 +1,9 @@
 import { isText, isElement, closestBlock, rootBlockOf } from './dom'
 
+// Tags that make the element around them a container rather than a block of
+// its own.
+const LEAF_CONTAINERS = ['P', 'H2', 'H3', 'H4', 'LI']
+
 export function getSelection() {
   return window.getSelection ? window.getSelection() : null
 }
@@ -58,7 +62,16 @@ export function nodeAtPath(root, path) {
   return current
 }
 
-// Serializable snapshot of the selection, for the undo stack.
+/**
+ * Snapshot of the selection, for the undo stack and for commands that rewrite
+ * the content under it.
+ *
+ * It carries the boundaries twice. The nodes themselves are what a command that
+ * only moves content around leaves intact — nesting a list item changes every
+ * index on the way down to it, but the text node the caret sits in is the same
+ * object afterwards. The index paths are the fallback, and the only thing that
+ * survives replacing the root's innerHTML.
+ */
 export function snapshotSelection(root) {
   const range = getRange(root)
   if (!range) return null
@@ -69,19 +82,28 @@ export function snapshotSelection(root) {
     startPath,
     startOffset: range.startOffset,
     endPath,
-    endOffset: range.endOffset
+    endOffset: range.endOffset,
+    startNode: range.startContainer,
+    endNode: range.endContainer
   }
 }
 
 export function restoreSelection(root, snapshot) {
   if (!snapshot) return false
+  const sel = getSelection()
+  if (!sel) return false
+
+  const live =
+    snapshot.startNode &&
+    root.contains(snapshot.startNode) &&
+    root.contains(snapshot.endNode) &&
+    snapshot.startNode.isConnected
+
   try {
-    const start = nodeAtPath(root, snapshot.startPath)
-    const end = nodeAtPath(root, snapshot.endPath)
+    const start = live ? snapshot.startNode : nodeAtPath(root, snapshot.startPath)
+    const end = live ? snapshot.endNode : nodeAtPath(root, snapshot.endPath)
     const clamp = (node, offset) =>
       Math.min(offset, isText(node) ? node.data.length : node.childNodes.length)
-    const sel = getSelection()
-    if (!sel) return false
     sel.setBaseAndExtent(
       start,
       clamp(start, snapshot.startOffset),
@@ -114,8 +136,11 @@ export function blocksInRange(root, range) {
   if (!start) return []
   if (start === end || !end) return [start]
 
+  // Only direct children count as "holds other blocks": an <li> with a nested
+  // list under it still owns the text written straight inside it, so it is a
+  // block of its own.
   const all = Array.from(root.querySelectorAll('p, h2, h3, h4, li, td, th')).filter(
-    (el) => !el.querySelector('p, h2, h3, h4, li')
+    (el) => !Array.from(el.children).some((child) => LEAF_CONTAINERS.includes(child.tagName))
   )
   const from = all.indexOf(start)
   const to = all.indexOf(end)

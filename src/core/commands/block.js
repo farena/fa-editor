@@ -2,13 +2,16 @@ import { replaceTag, isElement } from '../dom'
 import { blocksInRange, snapshotSelection, restoreSelection } from '../selection'
 import { getStyle, setStyle } from '../css'
 import { readIndent, writeIndent, clampLevel } from '../indent'
-import { BLOCK_TAGS, ALIGNMENTS, INDENTABLE_TAGS } from '../constants'
+import { indentItems, outdentItems, itemDepth, canIndentItem, canOutdentItem } from './list'
+import { BLOCK_TAGS, ALIGNMENTS, INDENTABLE_TAGS, MAX_INDENT } from '../constants'
 
 const ALIGN_VALUES = ALIGNMENTS.map((a) => a.model)
 
 const isConvertible = (el) => isElement(el) && BLOCK_TAGS.includes(el.tagName)
 
 const isIndentable = (el) => isElement(el) && INDENTABLE_TAGS.includes(el.tagName)
+
+const isItem = (el) => isElement(el) && el.tagName === 'LI'
 
 /**
  * Changes the tag of the blocks in the range. List items and cells are left
@@ -63,14 +66,32 @@ export function queryAlignment(root, range) {
 /**
  * Moves the blocks in the range one level in or out. Each block moves from the
  * level it is at, so indenting a mixed selection keeps the relative steps.
+ *
+ * A list item is not indented with a margin: its level is how deep it is
+ * nested, so it moves in and out of sublists instead.
  */
 export function changeIndent(root, range, direction) {
   const blocks = blocksInRange(root, range).filter(isIndentable)
   if (!blocks.length) return false
 
   const snapshot = snapshotSelection(root)
-  let changed = false
+  const items = blocks.filter(isItem)
+  let changed = items.length
+    ? direction > 0
+      ? indentItems(root, items)
+      : outdentItems(root, items)
+    : false
+
   for (const block of blocks) {
+    if (isItem(block)) {
+      // Older content carries the margin an <li> used to be indented with.
+      // Outdenting is what clears it; nesting replaced it.
+      if (direction < 0 && readIndent(block)) {
+        writeIndent(block, 0)
+        changed = true
+      }
+      continue
+    }
     const current = readIndent(block)
     const next = clampLevel(current + direction)
     if (next === current) continue
@@ -81,6 +102,9 @@ export function changeIndent(root, range, direction) {
   return changed
 }
 
+// An item's level is its nesting depth; every other block reads its margin.
+const levelOf = (root, block) => (isItem(block) ? itemDepth(root, block) : readIndent(block))
+
 /**
  * @returns {number|null} the level when uniform, `null` with nothing indentable
  *   under the caret, `'mixed'` when it varies.
@@ -88,6 +112,25 @@ export function changeIndent(root, range, direction) {
 export function queryIndent(root, range) {
   const blocks = blocksInRange(root, range).filter(isIndentable)
   if (!blocks.length) return null
-  const first = readIndent(blocks[0])
-  return blocks.every((block) => readIndent(block) === first) ? first : 'mixed'
+  const first = levelOf(root, blocks[0])
+  return blocks.every((block) => levelOf(root, block) === first) ? first : 'mixed'
+}
+
+/**
+ * Whether the buttons have anywhere to go. A mixed selection only needs one
+ * block that can still move: the others stay where they are.
+ *
+ * @returns {{ canIndent: boolean, canOutdent: boolean }}
+ */
+export function queryIndentLimits(root, range) {
+  const blocks = blocksInRange(root, range).filter(isIndentable)
+  const canIndent = (block) =>
+    isItem(block) ? canIndentItem(root, block) : readIndent(block) < MAX_INDENT
+  const canOutdent = (block) =>
+    isItem(block) ? canOutdentItem(root, block) || readIndent(block) > 0 : readIndent(block) > 0
+
+  return {
+    canIndent: blocks.some(canIndent),
+    canOutdent: blocks.some(canOutdent)
+  }
 }
